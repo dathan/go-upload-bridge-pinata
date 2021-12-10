@@ -1,6 +1,9 @@
 # Mac OS X files
 .DS_Store
 
+# env files no no
+.env
+
 # Binaries for programs and plugins
 *.exe
 *.dll

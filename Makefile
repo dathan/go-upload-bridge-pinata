@@ -1,7 +1,8 @@
+SHELL := /bin/bash
 # Go parameters
-BINARY_NAME=license-check
+BINARY_NAME=upload-bridge
 BINARY_UNIX=$(BINARY_NAME)_unix
-REPO=docker.pkg.github.com/dathan/go-project-template/go-project-template
+REPO=docker.pkg.github.com/dathan/go-upload-bridge-pinata/go-upload-bridge-pinata
 
 .PHONY: all
 all: lint test build
@@ -25,7 +26,7 @@ clean:
 
 .PHONY: run
 run:
-				go run ./cmd/$(BINARY_NAME)/*.go
+				source .env && go run ./cmd/$(BINARY_NAME)/*.go
 
 .PHONY: vendor
 vendor:
