@@ -13,6 +13,7 @@ import (
 	"github.com/wabarc/ipfs-pinner/pkg/pinata"
 )
 
+//UploadHandler switches logic based on the method type to either display a test upload page or accept a file upload
 func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
@@ -30,6 +31,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+//move the files (soon to be file) to pinata by uploading the file to that service
 func moveToPinanta(files *[]string, w http.ResponseWriter, r *http.Request) {
 
 	sr := NewResponse()
@@ -50,17 +52,17 @@ func moveToPinanta(files *[]string, w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			sr.Status = "ERROR"
 			sr.Msg = err.Error()
-			writeJsonResponse(w, *sr)
+			sr.WriteResponse(w)
 			return
 		}
 		//TODO: once above is fixed this makes sense
 		sr.Payload["pinata_url"] = fmt.Sprintf("https://gateway.pinata.cloud/ipfs/%s", cid)
 	}
-
-	writeJsonResponse(w, *sr)
+	sr.WriteResponse(w)
 
 }
 
+//upload the file to a save_dir and return the uploaded location where the file is
 func fileUpload(w http.ResponseWriter, r *http.Request, save_dir string) *[]string {
 	var files []string
 	// left shift 32 << 20 which results in 32*2^20 = 33554432
@@ -100,6 +102,7 @@ func fileUpload(w http.ResponseWriter, r *http.Request, save_dir string) *[]stri
 
 }
 
+// TODO should make this an embed using 1.16+ new feature
 func display(w http.ResponseWriter, tmpl string, data interface{}) {
 	log.Printf("executing template %s.html\n", tmpl)
 
@@ -116,7 +119,7 @@ func display(w http.ResponseWriter, tmpl string, data interface{}) {
 	}
 }
 
-func writeJsonResponse(w http.ResponseWriter, js STRUCTURED_RESPONSE) {
+func writeJsonResponse(w http.ResponseWriter, js ResponseEnvelope) {
 	jbyte, err := json.Marshal(js)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
