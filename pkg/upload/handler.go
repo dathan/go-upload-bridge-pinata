@@ -44,7 +44,7 @@ func moveToPinanta(files *[]string, w http.ResponseWriter, r *http.Request) {
 
 	pnt := pinata.Pinata{Apikey: apikey, Secret: secret}
 
-	log.Infof("%+v", pnt)
+	//TODO: fix this, we do not support multiple files in the same string we just parallel upload each file
 	for _, file_path := range *files {
 		cid, err := pnt.PinFile(file_path)
 		if err != nil {
@@ -53,8 +53,8 @@ func moveToPinanta(files *[]string, w http.ResponseWriter, r *http.Request) {
 			writeJsonResponse(w, *sr)
 			return
 		}
-
-		sr.Payload[file_path] = fmt.Sprintf("https://gateway.pinata.cloud/ipfs/%s", cid)
+		//TODO: once above is fixed this makes sense
+		sr.Payload["pinata_url"] = fmt.Sprintf("https://gateway.pinata.cloud/ipfs/%s", cid)
 	}
 
 	writeJsonResponse(w, *sr)
