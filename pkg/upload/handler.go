@@ -62,65 +62,40 @@ func moveToPinanta(files *[]string, w http.ResponseWriter, r *http.Request) {
 }
 
 func fileUpload(w http.ResponseWriter, r *http.Request, save_dir string) *[]string {
-	reader, err := r.MultipartReader()
+	var files []string
+	// left shift 32 << 20 which results in 32*2^20 = 33554432
+	// x << y, results in x*2^y
+	err := r.ParseMultipartForm(32 << 20)
+	if err != nil {
+		panic(err)
+	}
 
+	log.Infof("Looking at form data: [%s]", r.Form.Get("testjson"))
+
+	f, h, err := r.FormFile("myfile")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return nil
 	}
+	defer f.Close()
 
-	var files []string
-	//copy each part to destination.
-	for {
-		part, err := reader.NextPart()
-
-		if err == io.EOF {
-			break
-		}
-
-		if err != nil {
-			log.Printf("ERROR: %s\n", err.Error())
-			continue
-		}
-
-		//if part.FileName() is empty, skip this iteration.
-		if part.FileName() == "" {
-			continue
-		}
-
-		log.Printf("creating filename: %s\n", save_dir+"/"+part.FileName())
-
-		err = os.MkdirAll(save_dir, os.ModePerm)
-		if err != nil {
-			log.Printf("create: %s", err.Error())
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return nil
-		}
-
-		filename := save_dir + "/" + part.FileName()
-		files = append(files, filename)
-		dst, err := os.Create(filename)
-		defer func() {
-			if err := dst.Close(); err != nil {
-				log.Printf("Error on file close:  %s", err.Error())
-			}
-
-		}()
-
-		if err != nil {
-			log.Printf("create: %s", err.Error())
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return nil
-		}
-
-		if _, err := io.Copy(dst, part); err != nil {
-			log.Printf("copy: %s", err.Error())
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return nil
-		}
-
+	err = os.MkdirAll(save_dir, os.ModePerm)
+	if err != nil {
+		log.Printf("create: %s", err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil
 	}
 
+	filename := save_dir + "/" + h.Filename
+	files = append(files, filename)
+	dst, err := os.Create(filename)
+	defer func() {
+		if err := dst.Close(); err != nil {
+			log.Printf("Error on file close:  %s", err.Error())
+		}
+	}()
+
+	_, err = io.Copy(dst, f)
 	return &files
 
 }
