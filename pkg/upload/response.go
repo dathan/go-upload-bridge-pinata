@@ -26,20 +26,37 @@ func NewResponse() *ResponseEnvelope {
 	return resp
 }
 
+func SetupCORS(w *http.ResponseWriter) {
+	log.Infof("Sending CORS response")
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+}
+
 //ReponseEnvelopers writes reponse to the response writer or error
-func (s *ResponseEnvelope) WriteResponse(w http.ResponseWriter) error {
+func (s *ResponseEnvelope) WriteResponse(w http.ResponseWriter) {
+	log.Info("Writing Response")
 	jbyte, err := json.Marshal(s)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		log.Warnf("Error with JSON: %s", err)
+		Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
+	SetupCORS(&w)
 	w.Header().Set("Content-Type", "application/json")
 	if _, err = w.Write(jbyte); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		log.Warnf("Issue with response: %s", err)
+		Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	log.Infof("STRUCTURED_RESPONSE: %s", string(jbyte))
-	return nil
+	return
+}
+
+func Error(w http.ResponseWriter, err string, code int) {
+	log.Warnf("Response Error: %s [%d]", err, code)
+	SetupCORS(&w)
+	http.Error(w, err, http.StatusInternalServerError)
 }

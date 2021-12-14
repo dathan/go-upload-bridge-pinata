@@ -2,63 +2,118 @@ package upload
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"io"
 	"net/http"
+	"net/http/httputil"
 	"os"
 	"strings"
 
+	"github.com/dathan/go-upload-bridge-pinata/pkg/pinata"
 	log "github.com/sirupsen/logrus"
-	"github.com/wabarc/ipfs-pinner/pkg/pinata"
 )
 
 //UploadHandler switches logic based on the method type to either display a test upload page or accept a file upload
 func UploadHandler(w http.ResponseWriter, r *http.Request) {
+	log.Infof("UploadHandler: METHOD: %s", r.Method)
+	var url string
+	var err error
 	switch r.Method {
 	case "GET":
 		display(w, "test_upload", nil)
 
 	case "POST":
+
+		/*todo remove -- test response
+		sr := NewResponse()
+		sr.Status = "OK"
+		sr.Payload = make(map[string]interface{})
+		sr.Payload["pinata_url"] = "https://gateway.pinata.cloud/ipfs/QmNnfKdUbybj8tvSCu82ojoo8P7bgeueaZudDGCixjzUND"
+		sr.WriteResponse(w)
+		return
+		*/
 		f := fileUpload(w, r, "/tmp/upload_tmp")
+
 		if f != nil {
-			moveToPinanta(f, w, r)
+			url, err = moveToPinanta(f)
+			if err != nil {
+				Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 		}
 
+		new_pin, err := saveFormFile(url, r)
+		if err != nil {
+			Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		sr := NewResponse()
+		sr.Status = "OK"
+		sr.Payload = make(map[string]interface{})
+		sr.Payload["pinata_url"] = new_pin
+		sr.WriteResponse(w)
+		return
+	case "OPTIONS":
+		SetupCORS(&w)
+
 	default:
+		log.Warnf("Unsupported method passed: %s", r.Method)
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 
 }
 
+func saveFormFile(url string, r *http.Request) (string, error) {
+	levelTrait := map[string]interface{}{
+		"trait_type": "level",
+		"value":      100,
+	}
+
+	if len(r.Form.Get("name")) == 0 || len(r.Form.Get("description")) == 0 {
+		return "", errors.New("Invalid input on the form")
+	}
+
+	//https://docs.opensea.io/docs/metadata-standards
+	payload := pinata.NewNFTOpenSeaFormat()
+	payload.Name = r.Form.Get("name")
+	payload.Description = r.Form.Get("description")
+	payload.Image = url
+	payload.ExternalUrl = "https://foreveraward.com/c/0x44cFE4768bB446bebA11A9D4FF8f12AE97C862c0"
+	payload.Attributes = append(payload.Attributes, levelTrait)
+
+	res, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+
+	log.Infof("about to save :%s", res)
+	f, err := os.CreateTemp("/tmp/upload_tmp", "data.json")
+	if err != nil {
+		return "", err
+	}
+
+	_, err = f.Write(res)
+	if err != nil {
+		return "", err
+	}
+
+	files := &[]string{f.Name()}
+
+	return moveToPinanta(files)
+}
+
 //move the files (soon to be file) to pinata by uploading the file to that service
-func moveToPinanta(files *[]string, w http.ResponseWriter, r *http.Request) {
+func moveToPinanta(files *[]string) (string, error) {
 
-	sr := NewResponse()
-	sr.Status = "OK"
-	sr.Payload = make(map[string]interface{})
-
-	apikey := os.Getenv("IPFS_PINNER_PINATA_API_KEY")
-	secret := os.Getenv("IPFS_PINNER_PINATA_SECRET_API_KEY")
-	if apikey == "" || secret == "" {
-		panic("Need apikey and secret in the environment")
+	err, url := pinata.Upload(files)
+	if err != nil {
+		return "", err
 	}
 
-	pnt := pinata.Pinata{Apikey: apikey, Secret: secret}
-
-	//TODO: fix this, we do not support multiple files in the same string we just parallel upload each file
-	for _, file_path := range *files {
-		cid, err := pnt.PinFile(file_path)
-		if err != nil {
-			sr.Status = "ERROR"
-			sr.Msg = err.Error()
-			sr.WriteResponse(w)
-			return
-		}
-		//TODO: once above is fixed this makes sense
-		sr.Payload["pinata_url"] = fmt.Sprintf("https://gateway.pinata.cloud/ipfs/%s", cid)
-	}
-	sr.WriteResponse(w)
+	return url, nil
 
 }
 
@@ -72,25 +127,36 @@ func fileUpload(w http.ResponseWriter, r *http.Request, save_dir string) *[]stri
 		panic(err)
 	}
 
-	log.Infof("Looking at form data: [%s]", r.Form.Get("testjson"))
-
-	f, h, err := r.FormFile("myfile")
+	dump, err := httputil.DumpRequest(r, true)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprint(err), http.StatusInternalServerError)
+		panic(err)
+	}
+
+	log.Infof("DUMPING DATA: %q", dump)
+	log.Infof("formName - form data: [%s]", r.Form.Get("formName"))
+	log.Infof("formDescription - form data: [%s]", r.Form.Get("formDescription"))
+	//TODO: Ignore the name of the field and just upload it.
+	f, h, err := r.FormFile("File")
+	if err != nil {
+		Error(w, err.Error(), http.StatusInternalServerError)
 		return nil
 	}
 	defer f.Close()
 
 	err = os.MkdirAll(save_dir, os.ModePerm)
 	if err != nil {
-		log.Printf("create: %s", err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		Error(w, err.Error(), http.StatusInternalServerError)
 		return nil
 	}
 
 	filename := save_dir + "/" + h.Filename
 	files = append(files, filename)
 	dst, err := os.Create(filename)
+	if err != nil {
+		Error(w, err.Error(), http.StatusInternalServerError)
+		return nil
+	}
 	defer func() {
 		if err := dst.Close(); err != nil {
 			log.Printf("Error on file close:  %s", err.Error())
@@ -98,6 +164,13 @@ func fileUpload(w http.ResponseWriter, r *http.Request, save_dir string) *[]stri
 	}()
 
 	_, err = io.Copy(dst, f)
+	if err != nil {
+		log.Printf("create: %s", err.Error())
+		Error(w, err.Error(), http.StatusInternalServerError)
+		return nil
+	}
+
+	log.Infof("We have created %d files %v", len(files), files)
 	return &files
 
 }
@@ -117,17 +190,4 @@ func display(w http.ResponseWriter, tmpl string, data interface{}) {
 	if err != nil {
 		log.Printf("ERROR: %s\n", err.Error())
 	}
-}
-
-func writeJsonResponse(w http.ResponseWriter, js ResponseEnvelope) {
-	jbyte, err := json.Marshal(js)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(jbyte)
-	log.Infof("STRUCTURED_RESPONSE: %s", string(jbyte))
-
 }
