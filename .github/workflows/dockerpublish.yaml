@@ -48,7 +48,7 @@ jobs:
         uses: mr-smithers-excellent/docker-build-push@v5
         id: docker
         with:
-          image: dathan/go-upload-bridge-pinata
+          image: go-upload-bridge-pinata
           registry: ghcr.io
           tags: v1, latest, ${{ github.run_id }}
           username: ${{ github.actor }}
