@@ -2,7 +2,7 @@ SHELL := /bin/bash
 # Go parameters
 BINARY_NAME=upload-bridge
 BINARY_UNIX=$(BINARY_NAME)_unix
-REPO=docker.pkg.github.com/dathan/go-upload-bridge-pinata/go-upload-bridge-pinata
+REPO=ghcr.io/dathan/go-upload-bridge-pinata
 
 .PHONY: all
 all: lint test build
@@ -37,6 +37,9 @@ vendor:
 build-linux:
 				CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/$(BINARY_UNIX) -v cmd/$(BINARY_NAME)/
 
+.PHONY: docker-login
+docker-login:
+				echo $(CR_PAT) |docker login ghcr.io -u dathan --password-stdin
 # Build docker containers
 .PHONY: docker-build
 docker-build:
