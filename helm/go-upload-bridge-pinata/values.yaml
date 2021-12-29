@@ -6,7 +6,7 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/dathan/go-upload-bridge-pinata
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
 
@@ -38,7 +38,8 @@ securityContext: {}
 
 service:
   type: ClusterIP
-  port: 3000
+  port: 8181
+  targetPort: 8181
 
 ingress:
   enabled: false
