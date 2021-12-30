@@ -3,6 +3,17 @@
 # Declare variables to be passed into your templates.
 
 replicaCount: 1
+#secret name
+secret:
+  name: app-env-secret
+# Environment variable listing
+env:
+  # non sensitive variables
+  normal:
+  # sensitive variables
+  secret:
+    IPFS_PINNER_PINATA_API_KEY: "replace_by_hand"
+    IPFS_PINNER_PINATA_SECRET_API_KEY: "replace_by_hand"
 
 image:
   repository: ghcr.io/dathan/go-upload-bridge-pinata
