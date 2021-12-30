@@ -17,7 +17,6 @@ import (
 
 //UploadHandler switches logic based on the method type to either display a test upload page or accept a file upload
 func UploadHandler(w http.ResponseWriter, r *http.Request) {
-	log.Infof("UploadHandler: METHOD: %s", r.Method)
 	var url string
 	var err error
 	switch r.Method {
@@ -177,7 +176,6 @@ func fileUpload(w http.ResponseWriter, r *http.Request, save_dir string) *[]stri
 
 // TODO should make this an embed using 1.16+ new feature
 func display(w http.ResponseWriter, tmpl string, data interface{}) {
-	log.Printf("executing template %s.html\n", tmpl)
 
 	funcMap := template.FuncMap{
 		"join": strings.Join,
