@@ -25,3 +25,5 @@ vendor
 # Ignore api dir
 api
 bin
+tmp
+k8s

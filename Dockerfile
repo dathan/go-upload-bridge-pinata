@@ -34,10 +34,9 @@ LABEL stage=release
 # Pull CA Certificates to allow for TLS validation a CA
 COPY --from=alpineCerts /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=baseGo /root/gocode/bin /app
-COPY --from=baseGo /root/gocode/cmd/upload-bridge/test_upload.html /app
+#COPY --from=baseGo /root/gocode/cmd/upload-bridge/test_upload.html /app
 COPY --from=baseGo /root/gocode/scripts/entrypoint.sh /app
-#!/bin/bash
-RUN file="$(ls -l /app/)" && echo $file
+
 EXPOSE 8181
 ENTRYPOINT ["/app/entrypoint.sh"]
 

@@ -26,7 +26,7 @@ clean:
 
 .PHONY: run
 run:
-				source .env && go run ./cmd/$(BINARY_NAME)/*.go
+				source .env &&  ~/bin/air
 
 .PHONY: vendor
 vendor:

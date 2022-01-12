@@ -1,6 +1,7 @@
 package upload
 
 import (
+	"embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,9 +10,10 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"os"
-	"strings"
 
+	"github.com/dathan/go-upload-bridge-pinata/pkg/metadata"
 	"github.com/dathan/go-upload-bridge-pinata/pkg/pinata"
+	"github.com/julienschmidt/httprouter"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -21,16 +23,16 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 	switch r.Method {
 	case "GET":
-		display(w, "test_upload", nil)
+		display(w, "test_upload.htm", nil)
 
 	case "POST":
 
-		/*todo remove -- test response
-		sr := NewResponse()
-		sr.Status = "OK"
-		sr.Payload = make(map[string]interface{})
-		sr.Payload["pinata_url"] = "https://gateway.pinata.cloud/ipfs/QmNnfKdUbybj8tvSCu82ojoo8P7bgeueaZudDGCixjzUND"
-		sr.WriteResponse(w)
+		/*TODO: remove -- test response
+		sr1 := NewResponse()
+		sr1.Status = "OK"
+		sr1.Payload = make(map[string]interface{})
+		sr1.Payload["pinata_url"] = "https://gateway.pinata.cloud/ipfs/QmYPRg2fTXUMi2AsP9E3Gm43bVoPBtaLXB7CZzze4RTfod"
+		sr1.WriteResponse(w)
 		return
 		*/
 		f := fileUpload(w, r, "/tmp/upload_tmp")
@@ -43,12 +45,48 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		new_pin, err := saveFormFile(url, r)
+		levelTrait := map[string]interface{}{
+			"trait_type": "level",
+			"value":      100,
+		}
+
+		//https://docs.opensea.io/docs/metadata-standards
+		// build the nft struct and set the fields
+		NFTDataJson := pinata.NewNFTOpenSeaFormat()
+		NFTDataJson.Name = r.Form.Get("name")
+		NFTDataJson.Description = r.Form.Get("description")
+		NFTDataJson.Image = url
+
+		// save the Metadata to the database and get the metadata uuid
+		md, err := metadata.New(NFTDataJson).Save()
 		if err != nil {
 			Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
+		//this award uri allows og tags to render
+		NFTDataJson.ExternalUrl = "https://foreveraward.com/award/" + md.UUID
+
+		//TODO: should we save this?
+		NFTDataJson.Attributes = append(NFTDataJson.Attributes, levelTrait)
+
+		//save the file to pinata
+		new_pin, err := saveFormFile(NFTDataJson, r)
+		if err != nil {
+			Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// update the metadata with the pin uri
+		md.PinataURL = new_pin
+		errUpdate := md.Update()
+		if errUpdate != nil {
+			Error(w, errUpdate.Error(), http.StatusInternalServerError)
+			return
+
+		}
+
+		// send a valid response
 		sr := NewResponse()
 		sr.Status = "OK"
 		sr.Payload = make(map[string]interface{})
@@ -65,23 +103,60 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func saveFormFile(url string, r *http.Request) (string, error) {
-	levelTrait := map[string]interface{}{
-		"trait_type": "level",
-		"value":      100,
+//go:embed assets/*
+var assetData embed.FS
+
+//AwardHandler takes in a writer and request and does the following, return meta og tags for award
+//TODO: move this into its own service??
+func AwardHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	// grab data from the database - this implies that data is added on file upload.
+	// fill out template data
+	// render
+	templateData := struct {
+		Title       string
+		Image       string
+		Description string
+	}{
+		Title:       "File inside Go",
+		Image:       "https://gateway.pinata.cloud/ipfs/QmRPGRxkKtf3Vs3ngEefSGVbXbnZyHTRcs2BjFFSR8GUs3",
+		Description: "This is a description of the award",
 	}
+
+	guid := ps.ByName("guid")
+	if len(guid) == 0 {
+		Error(w, "Invalid input for url", http.StatusInternalServerError)
+		return
+	}
+
+	p := &pinata.NFTOpenSeaFormat{}
+
+	md := metadata.New(p)
+	md, err := md.Get(guid)
+	if err != nil {
+		Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if md.UUID != guid {
+		Error(w, "UNKNOWN GUID", http.StatusNotFound)
+		return
+	}
+
+	templateData.Title = md.Name
+	templateData.Description = md.Description
+	templateData.Image = md.Image
+
+	log.Infof("METHOD: %s] PARAM: (%s)", r.Method, ps.ByName("guid"))
+	display(w, "award.htm", templateData)
+
+}
+
+func saveFormFile(payload *pinata.NFTOpenSeaFormat, r *http.Request) (string, error) {
 
 	if len(r.Form.Get("name")) == 0 || len(r.Form.Get("description")) == 0 {
 		return "", errors.New("Invalid input on the form")
 	}
-
-	//https://docs.opensea.io/docs/metadata-standards
-	payload := pinata.NewNFTOpenSeaFormat()
-	payload.Name = r.Form.Get("name")
-	payload.Description = r.Form.Get("description")
-	payload.Image = url
-	payload.ExternalUrl = "https://foreveraward.com/c/0x44cFE4768bB446bebA11A9D4FF8f12AE97C862c0"
-	payload.Attributes = append(payload.Attributes, levelTrait)
 
 	res, err := json.Marshal(payload)
 	if err != nil {
@@ -133,8 +208,8 @@ func fileUpload(w http.ResponseWriter, r *http.Request, save_dir string) *[]stri
 	}
 
 	log.Infof("DUMPING DATA: %q", dump)
-	log.Infof("formName - form data: [%s]", r.Form.Get("formName"))
-	log.Infof("formDescription - form data: [%s]", r.Form.Get("formDescription"))
+	log.Infof("formName - form data: [%s]", r.Form.Get("name"))
+	log.Infof("formDescription - form data: [%s]", r.Form.Get("description"))
 	//TODO: Ignore the name of the field and just upload it.
 	f, h, err := r.FormFile("File")
 	if err != nil {
@@ -177,15 +252,13 @@ func fileUpload(w http.ResponseWriter, r *http.Request, save_dir string) *[]stri
 // TODO should make this an embed using 1.16+ new feature
 func display(w http.ResponseWriter, tmpl string, data interface{}) {
 
-	funcMap := template.FuncMap{
-		"join": strings.Join,
-	}
-
-	temp := template.Must(template.New(tmpl).Funcs(funcMap).ParseFiles(tmpl + ".html"))
-
-	//err := templates.ExecuteTemplate(w, tmpl+".html", data)
-	err := temp.ExecuteTemplate(w, tmpl+".html", data)
+	t, err := template.ParseFS(assetData, "assets/"+tmpl)
 	if err != nil {
-		log.Printf("ERROR: %s\n", err.Error())
+		log.Errorf("display: %s", err.Error())
+		Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
+
+	t.Execute(w, data)
+
 }
