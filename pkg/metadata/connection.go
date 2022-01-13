@@ -4,11 +4,13 @@ import (
 	"os"
 
 	goshard "github.com/dathan/go-shard"
+	"github.com/sirupsen/logrus"
 )
 
 //implements goshard.ShardConfig
 type ShardConfig struct{}
 
+//helper function to use a OS ENV KEY or value
 func getEnv(key, fallback string) string {
 	if value, ok := os.LookupEnv(key); ok {
 		return value
@@ -27,6 +29,8 @@ func (s ShardConfig) GetShardLookup() goshard.ShardLookup {
 		Password: getEnv("DB_PASS", "yoyoma"),
 		ShardId:  i,
 	})
+
+	logrus.Infof("DBInfo: %+v", *cp[0])
 
 	rsl := goshard.NewShardLookup(cp)
 	return rsl
