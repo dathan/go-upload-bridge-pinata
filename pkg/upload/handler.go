@@ -45,6 +45,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		//TODO: have a better definition that can be altered
 		levelTrait := map[string]interface{}{
 			"trait_type": "level",
 			"value":      100,
