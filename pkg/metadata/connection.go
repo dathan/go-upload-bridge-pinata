@@ -1,19 +1,30 @@
 package metadata
 
-import goshard "github.com/dathan/go-shard"
+import (
+	"os"
+
+	goshard "github.com/dathan/go-shard"
+)
 
 //implements goshard.ShardConfig
 type ShardConfig struct{}
+
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
+}
 
 func (s ShardConfig) GetShardLookup() goshard.ShardLookup {
 
 	var cp []*goshard.ConnectionParams
 	var i uint = 1
 	cp = append(cp, &goshard.ConnectionParams{
-		Host:     "127.0.0.1",
-		Dbname:   "foreverawards",
-		User:     "foreveraward",
-		Password: "yoyoma",
+		Host:     getEnv("DB_HOST", "127.0.0.1"),
+		Dbname:   getEnv("DB_NAME", "foreverawards"),
+		User:     getEnv("DB_USER", "foreveraward"),
+		Password: getEnv("DB_PASS", "yoyoma"),
 		ShardId:  i,
 	})
 

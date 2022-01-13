@@ -10,10 +10,14 @@ secret:
 env:
   # non sensitive variables
   normal:
+    DB_HOST: "foreveraward-mysql.default.svc.cluster.local"
+    DB_USER: "fa"
+    DB_NAME: "foreverawards"
   # sensitive variables
   secret:
     IPFS_PINNER_PINATA_API_KEY: "replace_by_hand"
     IPFS_PINNER_PINATA_SECRET_API_KEY: "replace_by_hand"
+    DB_PASS: "replace_by_hand"
 
 image:
   repository: ghcr.io/dathan/go-upload-bridge-pinata
