@@ -6,7 +6,7 @@ require github.com/sirupsen/logrus v1.8.1
 
 require (
 	9fans.net/go v0.0.4 // indirect
-	github.com/dathan/go-shard v0.0.0-20220111231147-3e331eaffe45 // indirect
+	github.com/dathan/go-shard v0.0.0-20220111234719-bb6a288ce74f // indirect
 	github.com/fatih/camelcase v1.0.0 // indirect
 	github.com/fatih/gomodifytags v1.16.0 // indirect
 	github.com/fatih/structtag v1.2.0 // indirect
