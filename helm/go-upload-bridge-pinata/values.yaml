@@ -10,7 +10,7 @@ secret:
 env:
   # non sensitive variables
   normal:
-    DB_HOST: "foreveraward-mysql.default.svc.cluster.local"
+    DB_HOST: "foreveraward-db-mysql.default.svc.cluster.local"
     DB_USER: "fa"
     DB_NAME: "foreverawards"
   # sensitive variables
