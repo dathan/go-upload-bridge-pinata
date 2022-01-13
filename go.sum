@@ -2,6 +2,8 @@ github.com/dathan/go-shard v0.0.0-20220111234719-bb6a288ce74f h1:OosU+RSLEeD4fcE
 github.com/dathan/go-shard v0.0.0-20220111234719-bb6a288ce74f/go.mod h1:b5PQCoYtaboNP6JCXFzGp9lNwpFA+se6XAHofNk0zoA=
 github.com/dathan/go-shard v0.0.0-20220113035915-34756efb0e9e h1:mH6Uye6Ni3PKGNcu+2lhdcQJEEvNdDERyYu1lFzmqFQ=
 github.com/dathan/go-shard v0.0.0-20220113035915-34756efb0e9e/go.mod h1:b5PQCoYtaboNP6JCXFzGp9lNwpFA+se6XAHofNk0zoA=
+github.com/dathan/go-shard v0.0.0-20220113053349-cecb8260d453 h1:AiRerUrdsLFgtgDRmgSYJSzJO/+AgrtNQmy1DosMu7M=
+github.com/dathan/go-shard v0.0.0-20220113053349-cecb8260d453/go.mod h1:b5PQCoYtaboNP6JCXFzGp9lNwpFA+se6XAHofNk0zoA=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/go-sql-driver/mysql v1.6.0 h1:BCTh4TKNUYmOmMUcQ3IipzF5prigylS7XXjEkfCHuOE=
