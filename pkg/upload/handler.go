@@ -4,11 +4,9 @@ import (
 	"embed"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"html/template"
 	"io"
 	"net/http"
-	"net/http/httputil"
 	"os"
 
 	"github.com/dathan/go-upload-bridge-pinata/pkg/metadata"
@@ -20,7 +18,7 @@ import (
 //UploadHandler switches logic based on the method type to either display a test upload page or accept a file upload
 func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	var url string
-	var err error
+
 	switch r.Method {
 	case "GET":
 		display(w, "test_upload.htm", nil)
@@ -35,7 +33,12 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		sr1.WriteResponse(w)
 		return
 		*/
-		f := fileUpload(w, r, "/tmp/upload_tmp")
+		f, err := fileUpload(r, "/tmp/upload_tmp")
+
+		if err != nil {
+			Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
 		if f != nil {
 			url, err = moveToPinanta(f)
@@ -193,44 +196,38 @@ func moveToPinanta(files *[]string) (string, error) {
 }
 
 //upload the file to a save_dir and return the uploaded location where the file is
-func fileUpload(w http.ResponseWriter, r *http.Request, save_dir string) *[]string {
+func fileUpload(r *http.Request, save_dir string) (*[]string, error) {
 	var files []string
 	// left shift 32 << 20 which results in 32*2^20 = 33554432
 	// x << y, results in x*2^y
 	err := r.ParseMultipartForm(32 << 20)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	dump, err := httputil.DumpRequest(r, true)
-	if err != nil {
-		http.Error(w, fmt.Sprint(err), http.StatusInternalServerError)
-		panic(err)
-	}
-
-	log.Infof("DUMPING DATA: %q", dump)
 	log.Infof("formName - form data: [%s]", r.Form.Get("name"))
 	log.Infof("formDescription - form data: [%s]", r.Form.Get("description"))
+	if r.Form.Get("name") == "" || r.Form.Get("description") == "" {
+		return nil, errors.New("Invalid Input")
+	}
+
 	//TODO: Ignore the name of the field and just upload it.
 	f, h, err := r.FormFile("File")
 	if err != nil {
-		Error(w, err.Error(), http.StatusInternalServerError)
-		return nil
+		return nil, err
 	}
 	defer f.Close()
 
 	err = os.MkdirAll(save_dir, os.ModePerm)
 	if err != nil {
-		Error(w, err.Error(), http.StatusInternalServerError)
-		return nil
+		return nil, err
 	}
 
 	filename := save_dir + "/" + h.Filename
 	files = append(files, filename)
 	dst, err := os.Create(filename)
 	if err != nil {
-		Error(w, err.Error(), http.StatusInternalServerError)
-		return nil
+		return nil, err
 	}
 	defer func() {
 		if err := dst.Close(); err != nil {
@@ -240,13 +237,12 @@ func fileUpload(w http.ResponseWriter, r *http.Request, save_dir string) *[]stri
 
 	_, err = io.Copy(dst, f)
 	if err != nil {
-		log.Printf("create: %s", err.Error())
-		Error(w, err.Error(), http.StatusInternalServerError)
-		return nil
+		log.Errorf("create: %s", err.Error())
+		return nil, err
 	}
 
 	log.Infof("We have created %d files %v", len(files), files)
-	return &files
+	return &files, nil
 
 }
 

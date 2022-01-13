@@ -20,19 +20,19 @@ RUN make test
 #
 # this is a dependancy for our container to have CA certs to talk to vault
 #
-FROM alpine:latest as alpineCerts
-LABEL stage=alpineCerts
-RUN apk add -U --no-cache ca-certificates
+#FROM alpine:latest as alpineCerts
+#LABEL stage=alpineCerts
+#RUN apk add -U --no-cache ca-certificates
 
 #
 # the 2nd FROM says copy the binary from baseGo and put it here using scratch as its base
 # - note using alpine because need to run a shell command wrapper
 #FROM scratch AS release
-FROM alpine:3.11.3 AS release
+FROM alpine:3.15 AS release
 LABEL stage=release
 
+RUN apk add -U --no-cache ca-certificates
 # Pull CA Certificates to allow for TLS validation a CA
-COPY --from=alpineCerts /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=baseGo /root/gocode/bin /app
 #COPY --from=baseGo /root/gocode/cmd/upload-bridge/test_upload.html /app
 COPY --from=baseGo /root/gocode/scripts/entrypoint.sh /app
