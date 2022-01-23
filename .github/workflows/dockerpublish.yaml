@@ -61,6 +61,7 @@ jobs:
           echo "deb https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
           sudo apt-get update
           sudo apt-get install helm
+          sed -i 's/autothis/${{ github.run_id }}' ./helm/go-upload-bridge-pinata/Chart.yaml
           helm upgrade go-upload-bridge-pinata ./helm/go-upload-bridge-pinata/ --set image.tag=${{ github.run_id }}
           helm ls
 
