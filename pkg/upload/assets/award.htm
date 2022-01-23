@@ -4,10 +4,18 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Web site created using create-react-app"
-    />
+    <meta name="description" content="{{$.Title}} / {{$.Description}}" />
+    <meta property="og:title" content="ForeverAward: {{$.Title}}" />
+    <meta property="og:description" content="{{$.Description}}" />
+    <meta property="og:url" content="https://foreveraward.com/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="{{$.Image}}" />
+    <meta property="twitter:card" content="summary" />
+    <meta property="twitter:title" content="{{$.Title}}" />
+    <meta property="twitter:description" content="{{$.Description}}" />
+    <meta property="twitter:url" content="https://foreveraward.com/" />
+    <meta property="twitter:image" content="{{$.Image}}" />
+
     <!--
       Notice the use of %PUBLIC_URL% in the tags above.
       It will be replaced with the URL of the `public` folder during the build.
