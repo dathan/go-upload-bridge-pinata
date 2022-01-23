@@ -121,10 +121,12 @@ func AwardHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 		Title       string
 		Image       string
 		Description string
+		GUID        string
 	}{
 		Title:       "File inside Go",
 		Image:       "https://gateway.pinata.cloud/ipfs/QmRPGRxkKtf3Vs3ngEefSGVbXbnZyHTRcs2BjFFSR8GUs3",
 		Description: "This is a description of the award",
+		GUID:        "13",
 	}
 
 	guid := ps.ByName("guid")
@@ -150,6 +152,7 @@ func AwardHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	templateData.Title = md.Name
 	templateData.Description = md.Description
 	templateData.Image = md.Image
+	templateData.GUID = guid
 
 	log.Infof("METHOD: %s] PARAM: (%s)", r.Method, ps.ByName("guid"))
 	display(w, "award.htm", templateData)
