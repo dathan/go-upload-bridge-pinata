@@ -19,6 +19,7 @@ func SetUpServer(portStr string) {
 	router.HandlerFunc("OPTIONS", "/upload", UploadHandler)
 
 	router.Handle("GET", "/award/:guid", AwardHandler)
+	router.Handle("POST", "/contactus", ContactUsHandler)
 
 	//http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
 	err := http.ListenAndServe(portStr, router)

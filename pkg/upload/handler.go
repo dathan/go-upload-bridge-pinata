@@ -159,6 +159,17 @@ func AwardHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 
 }
 
+func ContactUsHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	log.Warnf("CONTACTUS: [%s] [%s] - %s", r.PostFormValue("name"), r.PostFormValue("email"), r.PostFormValue("message"))
+
+	sr := NewResponse()
+	sr.Status = "OK"
+	sr.Payload = make(map[string]interface{})
+	sr.WriteResponse(w)
+	return
+}
+
 func saveFormFile(payload *pinata.NFTOpenSeaFormat, r *http.Request) (string, error) {
 
 	if len(r.Form.Get("name")) == 0 || len(r.Form.Get("description")) == 0 {
