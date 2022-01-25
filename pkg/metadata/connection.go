@@ -18,6 +18,7 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
+//implements the shard config interface
 func (s ShardConfig) GetShardLookup() goshard.ShardLookup {
 
 	var cp []*goshard.ConnectionParams

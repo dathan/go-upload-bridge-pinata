@@ -144,6 +144,7 @@ func AwardHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 		return
 	}
 
+	// it might be clearer that the struct is not set
 	if md.UUID != guid {
 		Error(w, "UNKNOWN GUID", http.StatusNotFound)
 		return

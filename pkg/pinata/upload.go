@@ -7,6 +7,7 @@ import (
 	"github.com/wabarc/ipfs-pinner/pkg/pinata"
 )
 
+// opensea.io format for nfts very simple
 type NFTOpenSeaFormat struct {
 	Name        string                   `json:"name"`
 	Image       string                   `json:"image"`
