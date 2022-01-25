@@ -7,9 +7,12 @@
     <meta name="description" content="{{$.Title}} / {{$.Description}}" />
     <meta property="og:title" content="ForeverAward: {{$.Title}}" />
     <meta property="og:description" content="{{$.Description}}" />
-    <meta property="og:url" content="https://foreveraward.com/" />
+    <meta
+      property="og:url"
+      content="https://foreveraward.com/award/{{$.GUID}}"
+    />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="{{$.Image}}" />
+    <meta property="og:image:url" content="{{$.Image}}" />
     <meta property="twitter:card" content="summary" />
     <meta property="twitter:title" content="ForeverAward: {{$.Title}}" />
     <meta property="twitter:description" content="{{$.Description}}" />

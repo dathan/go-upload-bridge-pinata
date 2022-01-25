@@ -56,11 +56,12 @@ func (s *MetaData) Save() (*MetaData, error) {
 
 	s.UUID = fmt.Sprintf("%s", guid["id"])
 	row := &goshard.Row{
-		"uuid":        fmt.Sprintf("UUID_TO_BIN(%s)", guid["id"]),
+		"uuid":        fmt.Sprintf("UUID_TO_BIN('%s')", s.UUID),
 		"name":        s.Name,
 		"description": s.Description,
 		"image":       s.Image,
 		"pinata_url":  s.PinataURL,
+		"create_date": "NOW()",
 	}
 
 	// add the row to the db
@@ -82,7 +83,7 @@ func (s *MetaData) Save() (*MetaData, error) {
 func (s *MetaData) Get(id string) (*MetaData, error) {
 
 	logrus.Infof("Getting ID: %s", id)
-	err, row := s.shardConnection.SelectRow("SELECT * FROM awards where uuid=UUID_TO_BIN(?)", id)
+	err, row := s.shardConnection.SelectRow("SELECT *, BIN_TO_UUID(uuid) as id FROM awards where uuid=UUID_TO_BIN(?)", id)
 	if err != nil {
 		return s, err
 	}
@@ -98,9 +99,8 @@ func (s *MetaData) Get(id string) (*MetaData, error) {
 	s.Description = fmt.Sprintf("%s", row["description"])
 	s.Image = fmt.Sprintf("%s", row["image"])
 	s.PinataURL = fmt.Sprintf("%s", row["pinata_url"])
-	s.UUID = fmt.Sprintf("%s", id)
+	s.UUID = id
 
-	logrus.Info("returning:%+v", row)
 	return s, nil
 
 }
