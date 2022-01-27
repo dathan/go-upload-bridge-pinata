@@ -24,6 +24,9 @@ func SetUpServer(portStr string) {
 	// allow to record the fact that this award is actually minted and what the token_id will be
 	router.Handle("POST", "/award/:guid", AwardHandler)
 
+	// print out an award
+	router.Handle("GET", "/award/:guid", AwardHandler)
+
 	router.Handle("POST", "/contactus", ContactUsHandler)
 
 	//http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
