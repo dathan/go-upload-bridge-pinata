@@ -54,6 +54,7 @@ func (s *MetaData) List() (MetaDataResults, error) {
 			Description: fmt.Sprintf("%s", row["description"]),
 			ExternalUrl: fmt.Sprintf("%s", row["external_url"]),
 			Address:     fmt.Sprintf("%s", row["address"]),
+			Image:       fmt.Sprintf("%s", row["image"]),
 		}
 
 		result := MetaDataResult{
