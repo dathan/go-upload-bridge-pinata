@@ -18,7 +18,12 @@ func SetUpServer(portStr string) {
 	router.HandlerFunc("POST", "/upload", UploadHandler)
 	router.HandlerFunc("OPTIONS", "/upload", UploadHandler)
 
-	router.Handle("GET", "/award/:guid", AwardHandler)
+	// use awards here
+	router.Handle("GET", "/awards/:address", AwardsHandler)
+
+	// allow to record the fact that this award is actually minted and what the token_id will be
+	router.Handle("POST", "/award/:guid", AwardHandler)
+
 	router.Handle("POST", "/contactus", ContactUsHandler)
 
 	//http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))

@@ -15,6 +15,15 @@ type MetaData struct {
 	UUID            string
 }
 
+type MetaDataResult struct {
+	*pinata.NFTOpenSeaFormat
+	PinataURL string `json:"pinata_url,omitempty"`
+	UUID      string `json:"uuid,omitempty"`
+	Address   string `json:"address,omitempty"`
+}
+
+type MetaDataResults []MetaDataResult
+
 func New(p *pinata.NFTOpenSeaFormat) *MetaData {
 	//TODO Replace this package it is to manual for constantly casting in code all over the place
 	sc := ShardConfig{}
@@ -25,6 +34,39 @@ func New(p *pinata.NFTOpenSeaFormat) *MetaData {
 
 	return &MetaData{p, sConn, "", ""}
 
+}
+
+func (s *MetaData) List() (MetaDataResults, error) {
+	logrus.Infof("Looking up the awards for: [%s]", s.Address)
+	err, rows := s.shardConnection.SelectAll("SELECT *, BIN_TO_UUID(uuid) as id FROM awards WHERE address=?", s.Address)
+	if err != nil {
+
+		logrus.Infof("err %s", err)
+		return nil, err
+	}
+
+	results := MetaDataResults{}
+
+	for _, row := range rows {
+
+		nftfomat := &pinata.NFTOpenSeaFormat{
+			Name:        fmt.Sprintf("%s", row["name"]),
+			Description: fmt.Sprintf("%s", row["description"]),
+			ExternalUrl: fmt.Sprintf("%s", row["external_url"]),
+			Address:     fmt.Sprintf("%s", row["address"]),
+		}
+
+		result := MetaDataResult{
+			UUID:             fmt.Sprintf("%s", row["id"]),
+			PinataURL:        fmt.Sprintf("%s", row["pinata_url"]),
+			NFTOpenSeaFormat: nftfomat,
+		}
+
+		logrus.Infof("ADDING RESULT: %v", result)
+
+		results = append(results, result)
+	}
+	return results, nil
 }
 
 // add the nft metadata end file
@@ -61,6 +103,7 @@ func (s *MetaData) Save() (*MetaData, error) {
 		"description": s.Description,
 		"image":       s.Image,
 		"pinata_url":  s.PinataURL,
+		"address":     s.Address,
 		"create_date": "NOW()",
 	}
 

@@ -13,6 +13,7 @@ type NFTOpenSeaFormat struct {
 	Image       string                   `json:"image"`
 	Description string                   `json:"description"`
 	ExternalUrl string                   `json:"external_url"`
+	Address     string                   `json:"address"`
 	Attributes  []map[string]interface{} `json:"attributes"`
 }
 

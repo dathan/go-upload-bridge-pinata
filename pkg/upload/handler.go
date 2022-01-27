@@ -60,6 +60,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		NFTDataJson.Name = r.Form.Get("name")
 		NFTDataJson.Description = r.Form.Get("description")
 		NFTDataJson.Image = url
+		NFTDataJson.Address = r.Form.Get("address")
 
 		// save the Metadata to the database and get the metadata uuid
 		md, err := metadata.New(NFTDataJson).Save()
@@ -87,7 +88,6 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		if errUpdate != nil {
 			Error(w, errUpdate.Error(), http.StatusInternalServerError)
 			return
-
 		}
 
 		// send a valid response
@@ -160,6 +160,31 @@ func AwardHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 
 }
 
+//TODO: move this into its own service??
+func AwardsHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	p := &pinata.NFTOpenSeaFormat{Address: ps.ByName("address")}
+	results, err := metadata.New(p).List()
+	if err != nil {
+		Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	switch r.Method {
+
+	case "GET":
+
+		sr := NewResponse()
+		sr.Status = "OK"
+		sr.Payload = make(map[string]interface{})
+		sr.Payload["awards"] = results
+		sr.WriteResponse(w)
+		return
+	case "OPTIONS":
+		SetupCORS(&w)
+	}
+
+}
+
 func ContactUsHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	log.Warnf("CONTACTUS: [%s] [%s] - %s", r.PostFormValue("name"), r.PostFormValue("email"), r.PostFormValue("message"))
@@ -220,8 +245,10 @@ func fileUpload(r *http.Request, save_dir string) (*[]string, error) {
 		return nil, err
 	}
 
-	log.Infof("formName - form data: [%s]", r.Form.Get("name"))
-	log.Infof("formDescription - form data: [%s]", r.Form.Get("description"))
+	log.Infof("Form Data - NAME: [%s]", r.Form.Get("name"))
+	log.Infof("Form Data - DESC: [%s]", r.Form.Get("description"))
+	log.Infof("Form Data - ADDR: [%s]", r.Form.Get("address"))
+
 	if r.Form.Get("name") == "" || r.Form.Get("description") == "" {
 		return nil, errors.New("Invalid Input")
 	}
